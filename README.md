@@ -66,6 +66,20 @@ Some Information:
 ```
 This will send all of the assets/<anything> request to assets. You can retrieve information about this request through the arguemnt you recieve in the call back `HTTP_Request`. It has a `path` string which contains the actual endpoint requested. For example it maybe have `/assets/stuff.png`. Unlike in other frameworks, you are responsible for creating `static` folder yourself by this method.
 
+```html 
+<html>
+    <head> <title> Test </title> </head>
+    <body>
+        <h5>The username is :- {username}</h5>
+        <h5>The email is :- {email}</h5>
+        <br> <br>
+        <hr> <hr>
+        <h3> Welcome here </h3>
+    </body>
+</html>
+```
+This is the html file rendered by home endpoint. The variables `username` and `email` are directly embedded through lua from earlier script.
+
 # Contributing
 Just send a PR, or file an issue. 
 
