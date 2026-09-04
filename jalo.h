@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <lualib.h>
+#include <lauxlib.h>
+#include "http.h"
 
 #define BUFFER_SIZE 1024
 
@@ -15,30 +18,13 @@ typedef struct {
     size_t buffer_size;
 } JaloClient;
 
-typedef enum {
-    HTML,
-    PNG,
-    JPG
-}JaloOutputType;
 
 typedef struct {
     char *str;
     size_t len_str;
-    JaloOutputType type;
+    HTTP_Out_Types type;
 }JaloOutput;
 
-
-typedef enum{
-     GET,
-     POST,
-     UNKNOWN,
-     GET_ASSET,
-}REQ_TYPE;
-
-typedef struct{
-    REQ_TYPE type;
-    char path[50]; // TODO: use dynamic
-}HTTP_Request;
 
 typedef struct {
     char *name;
@@ -55,6 +41,8 @@ typedef struct {
 
     size_t client_counter;
     size_t endpoint_counter;
+
+    lua_State *L;
 } JaloServe;
 
 
@@ -63,5 +51,8 @@ void jalo_run(JaloServe *js, int port); void jalo_deinit(JaloServe *js);
 JaloOutput jalo_string_output(char *str);
 // TODO: use variadics in string_output too
 JaloOutput jalo_file_output(char *str);
-JaloOutput jalo_render(char *file_name);
+JaloOutput jalo_html_output(char *file_name);
 void jalo_register(JaloServe *js, char *name, JaloOutput (*func)(HTTP_Request));
+void jalo_execute_file(JaloServe *js ,char *file_name);
+void jalo_execute(JaloServe *js ,char *code);
+JaloOutput jalo_render_template(JaloServe *js, char *file_name);

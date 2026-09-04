@@ -1,83 +1,5 @@
 #include "jalo.h"
 
-static HTTP_Request parse_http(char *test){
-   char temp[50] = {0};  
-   HTTP_Request hr = {};
-
-   int counter = 0;
-
-   while (test[counter] != ' '){
-       temp[counter] = test[counter];
-       counter ++;
-   }
-   if (strcmp(temp,"GET")==0){
-       hr.type = GET;
-   }else if (strcmp(temp,"POST") == 0){
-       hr.type = POST;
-   }else{
-       printf("Not Implemented Request %s", temp);
-       hr.type = UNKNOWN;
-   }
-
-   counter++;
-   size_t start = counter;
-
-   while (test[counter] != ' '){
-       counter ++;
-   }
-   memcpy(hr.path, test+start,counter-start+1);
-   hr.path[counter-start] = '\0';
-
-   return hr;
-}
-
-typedef struct{
-    char others[1000];
-    char *data;
-    size_t size;
-}HTTP_Response;
-
-
-static HTTP_Response create_http(JaloOutput *jo){
-    char *header = "HTTP/1.1 200 OK\r\n" \
-                    "Content-Type: "  ;
-    char *header2;
-    switch(jo->type){
-        case HTML:
-            header2 =  "text/html; charset=UTF-8\r\n";
-            break;
-        case JPG:
-            header2 =  "image/jpeg\r\n";
-            break;
-        default:
-            printf("The file Format isn't recognized or implemented\n");
-            exit(0);
-    }
-    char *header3 = "Content-Length: ";
-
-    HTTP_Response hresponse = {.data = jo->str, .size = jo->len_str};
-    sprintf(hresponse.others,"%s%s%s%ld\r\n\r\n",header,header2, header3, jo->len_str);
-    return hresponse;
-}
-
-static int compare_endpoint(char *name, HTTP_Request *hr){
-    int len1 = strlen(name);
-    int len2 = strlen(hr->path);
-    int len3 = (len1 > len2) ? len1 : len2;
-
-    // TODO: won't work for multiple * and isn't rigid 
-    for (int i = 0; i < len3; i++){
-        if (!(name[i] == hr->path[i])){
-            if(name[i] == '*'){
-                return 1;
-            }
-            return 0;
-        }
-    }
-    return 1;
-}
-
-
 static void handle_client(JaloServe *js, JaloClient jc){
     read(jc.client_fd, jc.buffer, jc.buffer_size);
 
@@ -95,7 +17,7 @@ static void handle_client(JaloServe *js, JaloClient jc){
         if (compare_endpoint(js->endpoints[i].name, &hr)){
             // directly returning FIX TODO
             JaloOutput jo = js->endpoints[i].func(hr);
-            HTTP_Response output = create_http(&jo);
+            HTTP_Response output = create_http(jo.type,jo.str,jo.len_str);
 
             write(jc.client_fd, output.others, strlen(output.others));
             write(jc.client_fd, output.data, output.size);
@@ -148,12 +70,20 @@ void jalo_run(JaloServe *js, int port){
 }
 
 void jalo_register(JaloServe *js, char *name, JaloOutput (*func)(HTTP_Request)){
+    for (int i =0; i< js->endpoint_counter; i++){
+        if (strcmp(js->endpoints[i].name,name) == 0){
+            js->endpoints[i].func = func;
+            return;
+        }
+    }
+
     js->endpoints[js->endpoint_counter] = (JaloEndpoint){.name = name, .func = func};
     js->endpoint_counter ++;
 }
 
 void jalo_deinit(JaloServe *js){
     close(js->server_fd);
+    lua_close(js->L);
 }
 
 JaloOutput jalo_file_output(char *file_name) {
@@ -179,7 +109,67 @@ JaloOutput jalo_file_output(char *file_name) {
 
 }
 
-JaloOutput jalo_render(char *file_name){
+JaloOutput jalo_render_template(JaloServe *js, char *file_name){
+    FILE *fp = fopen(file_name, "r");
+    if (!fp) {
+        printf("Unable To open HTML File %s \n",file_name);
+        exit(0);
+    }
+
+    fseek(fp,0,SEEK_END);
+    size_t size = ftell(fp);
+    rewind(fp);
+
+    char *temp = (char *) malloc(size+1);
+    char *temp2 = (char *) malloc(size*2); // Dynamically Reallocate TODO
+    fread(temp,size,1,fp);
+    temp[size] = '\0'; 
+    memset(temp2,0,size*2);
+
+    // start processing the file:
+    int counter = 0;
+    int counter2 = 0;
+    while (counter < size)
+    {
+        // if single {
+        if (temp[counter] != '{'){
+            temp2[counter2] = temp[counter];
+        }
+        else {
+            // search for another }
+            char words[50]={0};
+            int word_i = 0;
+
+            counter++;
+            while ((counter < size) && (temp[counter] != '}')){
+                words[word_i] = temp[counter];
+                counter ++;
+                word_i ++;
+            }
+            // means it overflew
+            if(!(temp[counter] == '}')){
+                printf("{ wasn't closed in the html, to be rendered\n");
+                exit(0);
+            }
+
+            // means we got a vairable in words 
+            lua_getglobal(js->L, words);
+            const char *val = lua_tostring(js->L, -1); // check for NULL TODOIMP
+            memcpy(temp2+counter2, val, strlen(val));
+            counter2 = counter2 + strlen(val);
+            lua_pop(js->L,1);
+        }
+        counter ++;
+        counter2 ++;
+    }
+
+    return (JaloOutput){ .str = temp2,
+        .len_str = size*2,
+        .type = HTML
+    };
+}
+
+JaloOutput jalo_html_output(char *file_name){
     FILE *fp = fopen(file_name, "r");
     if (!fp) {
         printf("Unable To open HTML File %s \n",file_name);
@@ -193,6 +183,7 @@ JaloOutput jalo_render(char *file_name){
     char *temp = (char *) malloc(size+1);
     fread(temp,size,1,fp);
     temp[size] = '\0'; 
+
     return (JaloOutput){ .str = temp,
         .len_str = size,
         .type = HTML
@@ -211,12 +202,25 @@ JaloOutput jalo_string_output(char *str){
     };
 }
 
+
+JaloOutput _static (HTTP_Request hq) {
+    return jalo_file_output(hq.path+1);
+}
+
 JaloOutput _favicon (HTTP_Request hq) {
-    return jalo_file_output("assets/logo.png");
+    strcpy(hq.path,"/assets/logo.png");
+    return _static (hq);
 }
 
 JaloOutput _home (HTTP_Request hr) {
-    return jalo_render("assets/default.html");
+    return jalo_html_output("assets/default.html");
+}
+
+void jalo_execute(JaloServe *js ,char *code){
+    luaL_dostring(js->L, code);
+}
+void jalo_execute_file(JaloServe *js ,char *file_name){
+    luaL_dofile(js->L, file_name);
 }
 
 JaloServe jalo_init(void){
@@ -233,8 +237,16 @@ JaloServe jalo_init(void){
         exit(EXIT_FAILURE);
     }
 
+    jalo_register(&js,"/assets/*",_static);
     jalo_register(&js,"/favicon.ico",_favicon);
     jalo_register(&js,"/",_home);
 
+    // Initialize Lua
+    js.L = luaL_newstate();
+    if (js.L == NULL){
+        printf("LUA can't initilzate\n");
+        exit(0);
+    }
+    luaL_openlibs(js.L);
     return js;
 }
