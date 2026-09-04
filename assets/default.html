@@ -1,0 +1,44 @@
+<!Doctype html>
+<html>
+    <head> 
+        <title> Jalo - A nice Web Server </title> 
+<style>
+    h2{
+        font-size : 25px;
+        color: purple;
+        margin-left:50%;
+    }
+    .top{
+        display : flex;
+        align-content: center;
+    }
+    .nest{
+        display:flex;
+        flex-direction:column;
+    }
+
+    body {
+        border : 3px solid black;
+        padding : 20px;
+    }
+</style>
+    </head>
+    <body>
+        <h2> Jalo - A simple Web Server </h2>
+        <div class='top'>
+            <img src="assets/logo_large.png" width=250px height=250px>
+            <div class='nest'>
+                <p> Jalo is a simple web server backend-framework written in C. </p>
+                <p>Simplicity and C doesn't sound good together atleast on web grounds, but sometimes, you just wanna write C and create a nice working website, specially during these times where LLMs can generate and spit out a complete working website in any javascript framework under 10 minutes.</p>
+        <p> The main reason Jalo is here is because, I wanna write the backend of my page in C (some of them). Frameworks like Flask and FastAPI are really good but Jalo is super good. It doesn't include overheads, consumes a small amount of memory, can run in any server (linux) on any low amount of RAM available. This might not be the easiest or the safest way to write a website but it is the most grounded way to write software. This exists as a direct competition to LLMs. </p>
+            </div>
+        </div>
+
+
+        <h2>Don't wanna see this?</h2>
+        <p> You are seeing this default page because you haven't implemented the '/' endpoint back in jalo, implement it, and this will be overidden by your own function call </p>
+
+        <hr> <hr> <hr> 
+        <p> <i> By: Meyan Adhikari </i> </p>
+    </body>
+</html>
