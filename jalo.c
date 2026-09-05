@@ -132,7 +132,7 @@ JaloOutput jalo_render_template(JaloServe *js, char *file_name){
     while (counter < size)
     {
         // if single {
-        if (temp[counter] != '{'){
+        if (temp[counter] != '^'){
             temp2[counter2] = temp[counter];
         }
         else {
@@ -147,7 +147,7 @@ JaloOutput jalo_render_template(JaloServe *js, char *file_name){
                 word_i ++;
             }
             // means it overflew
-            if(!(temp[counter] == '}')){
+            if(!(temp[counter] == '^')){
                 printf("{ wasn't closed in the html, to be rendered\n");
                 exit(0);
             }
@@ -237,9 +237,9 @@ JaloServe jalo_init(void){
         exit(EXIT_FAILURE);
     }
 
-    jalo_register(&js,"/assets/*",_static);
-    jalo_register(&js,"/favicon.ico",_favicon);
-    jalo_register(&js,"/",_home);
+    // jalo_register(&js,"/assets/*",_static);
+    // jalo_register(&js,"/favicon.ico",_favicon);
+    // jalo_register(&js,"/",_home);
 
     // Initialize Lua
     js.L = luaL_newstate();
