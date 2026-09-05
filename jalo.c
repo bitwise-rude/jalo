@@ -109,62 +109,98 @@ JaloOutput jalo_file_output(char *file_name) {
 
 }
 
-JaloOutput jalo_render_template(JaloServe *js, char *file_name){
+JaloOutput jalo_render_template(JaloServe *js, char *file_name) {
     FILE *fp = fopen(file_name, "r");
     if (!fp) {
-        printf("Unable To open HTML File %s \n",file_name);
+        printf("Unable To open HTML File %s \n", file_name);
         exit(0);
     }
 
-    fseek(fp,0,SEEK_END);
+    fseek(fp, 0, SEEK_END);
     size_t size = ftell(fp);
     rewind(fp);
 
-    char *temp = (char *) malloc(size+1);
-    char *temp2 = (char *) malloc(size*2); // Dynamically Reallocate TODO
-    fread(temp,size,1,fp);
-    temp[size] = '\0'; 
-    memset(temp2,0,size*2);
+    char *temp = (char *) malloc(size + 1);
+    fread(temp, size, 1, fp);
+    temp[size] = '\0';
+    fclose(fp);
 
-    // start processing the file:
-    int counter = 0;
-    int counter2 = 0;
-    while (counter < size)
-    {
-        // if single {
-        if (temp[counter] != '^'){
-            temp2[counter2] = temp[counter];
+    size_t lua_cap = size * 4 + 512;
+    char *lua_script = (char *) malloc(lua_cap);
+    strcpy(lua_script, "local _buf = {}\n");
+
+    size_t i = 0;
+    while (i < size) {
+        // for {% ... %}
+        if (temp[i] == '{' && temp[i+1] == '%') {
+            i += 2; // skip {%
+            char code_buf[512] = {0};
+            int cb_i = 0;
+            while (i < size && !(temp[i] == '%' && temp[i+1] == '}')) {
+                code_buf[cb_i++] = temp[i++];
+            }
+            if (i < size) i += 2; // skip %}
+
+            strcat(lua_script, code_buf);
+            strcat(lua_script, "\n");
         }
+        // for {{ ... }}
+        else if (temp[i] == '{' && temp[i+1] == '{') {
+            i += 2; // {{
+            char expr_buf[512] = {0};
+            int eb_i = 0;
+            while (i < size && !(temp[i] == '}' && temp[i+1] == '}')) {
+                expr_buf[eb_i++] = temp[i++];
+            }
+            if (i < size) i += 2; // }}
+
+            char insert_stmt[1024];
+            snprintf(insert_stmt, sizeof(insert_stmt), "table.insert(_buf, tostring(%s))\n", expr_buf);
+            strcat(lua_script, insert_stmt);
+        }
+        // Normal
         else {
-            // search for another }
-            char words[50]={0};
-            int word_i = 0;
-
-            counter++;
-            while ((counter < size) && (temp[counter] != '}')){
-                words[word_i] = temp[counter];
-                counter ++;
-                word_i ++;
+            char text_buf[2048] = {0};
+            int tb_i = 0;
+            while (i < size && !(temp[i] == '{' && (temp[i+1] == '{' || temp[i+1] == '%'))) {
+                text_buf[tb_i++] = temp[i++];
             }
-            // means it overflew
-            if(!(temp[counter] == '^')){
-                printf("{ wasn't closed in the html, to be rendered\n");
-                exit(0);
-            }
+            text_buf[tb_i] = '\0';
 
-            // means we got a vairable in words 
-            lua_getglobal(js->L, words);
-            const char *val = lua_tostring(js->L, -1); // check for NULL TODOIMP
-            memcpy(temp2+counter2, val, strlen(val));
-            counter2 = counter2 + strlen(val);
-            lua_pop(js->L,1);
+            if (tb_i > 0) {
+                char insert_stmt[4096];
+                snprintf(insert_stmt, sizeof(insert_stmt), "table.insert(_buf, [[%s]])\n", text_buf);
+                strcat(lua_script, insert_stmt);
+            }
         }
-        counter ++;
-        counter2 ++;
     }
 
-    return (JaloOutput){ .str = temp2,
-        .len_str = size*2,
+    strcat(lua_script, "return table.concat(_buf)\n");
+
+    free(temp);
+
+    if (luaL_dostring(js->L, lua_script) != LUA_OK) {
+        printf("Template execution error: %s\n", lua_tostring(js->L, -1));
+        free(lua_script);
+        exit(0);
+    }
+
+    const char *rendered = lua_tostring(js->L, -1);
+    size_t rendered_len = rendered ? strlen(rendered) : 0;
+
+    char *final_output = (char *) malloc(rendered_len + 1);
+    if (rendered) {
+        strcpy(final_output, rendered);
+    } else {
+        final_output[0] = '\0';
+    }
+
+    lua_pop(js->L, 1);
+    free(lua_script);
+
+    return (JaloOutput){
+        .str = final_output,
+        .len_str = rendered_len,
         .type = HTML
     };
 }
