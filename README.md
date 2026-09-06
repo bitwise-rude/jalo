@@ -1,33 +1,48 @@
 # jalo
 <img src="./assets/logo_large.png" width=250>
 
-A Clua (C + Lua) way of making backend for your websites.
+A Clua (C + Lua) way of making backend for making websites.
 
 > This is under development. It's not ready for making an actual websites besides testings.
+> This is just a personal project, I don't see this being used in actual production.
 > Any form of contribution is highly appreciated.
 
 # How it works?
-It should work surfacely like this:
 1. You write in C, everything happens in the C environment.
 2. You use Lua as a templating language. You can template it inside HTML or even write script outside of it.
+3. So, in a way, you can work with both C and Lua. Using one or the other whenever you want. However, I have implemented templating through Lua only till now.
 
-# What has been achieved?
-1. You can make blueprints through C and register them. 
+# Walkthrough
 
+## Basic
+- Include Jalo's Headerfile, `JaloServe` act as the main object/struct which will be referenced in almost all function calls. It's a good idea to make it a global variable, then in your main function initialize it using `jalo_init`
+    
 `main.c`
 ```c
 #include "jalo.h"
 
 JaloServe js;
 
-JaloOutput home(HTTP_Request hr) {
-    return jalo_render_template(&js, "./assets/test.html");
-}
-
 int main() {
     js = jalo_init();
 
-    jalo_execute_file(&js,"./assets/init.lua");
+```
+- Just like in other frameworks like Flask and Django, you have to create function calls for each of your endpoints. For example for home or the '/', the function call will look like 
+
+```c
+JaloOutput home(HTTP_Request hr) {
+    return jalo_render_template(&js, "./assets/test.html");
+}
+```
+- Every endpoint function call should return `JaloOutput` and take input `HTTP_Request` which contains information about the request, including the type, and requested path, etc. 
+
+- `jalo_render_template` renders an html file. If the html file contains Lua (we will see this part later), it also executes the Lua code inside.
+
+- To attach this function call with a path or endpoint you can use the `jalo_register` function. Just below the initialization we can do 
+
+```c
+int main() {
+    js = jalo_init();
 
     jalo_register(&js, "/", home);
 
@@ -35,50 +50,109 @@ int main() {
     jalo_deinit(&js);
 }
 ```
-`JaloServe js;` serves as the main state variable. Making it global makes it easier to passaround through your endpoints.
+- Here I have registered the '/' endpoint to map `home` which is the function we defined earlier. `jalo_run` should be call at the end which will run the server on a specified port (in this case 8080). Similarly, `jalo_deinit` can be called at the end for cleanups. 
 
-- You initialize with `jalo_init()`. 
-- You can register a blueprint with `jalo_register`. The first argument of this function and almost all the library function is the pointer to the `JaloServe` object/struct. Then it needs the route path, and a callback.
-- The call back in this case the function `home` should accept the `HTTP_Request` struct as its argument, and always return a `JaloOutput`. Every Endpoint callback should follow this.
-- After registering all the blueprint `jalo_run` will run it on a port you provide it. This is a blocking call and will block execution until you stop execution manually.
-- `jalo_deinit` is supposed to free memory or close sockets. 
--`jalo_execute_file` takes a lua script and executes it. If you wish to execute scripts outside of html files, this is the way to do it. It keeps track of variables you made inside that script. You can call this function multiple times too.
+- Notice how every function takes the pointer to the `JaloServe` we created globally as its first argument.
 
-
-The `init.lua` looks like this:
-
-```lua
-username = "Meyan"
-email = "dareludum@gmail.com"
-```
-These are just simple variable declearation. Don't use `local` because I haven't implemented it with local, haha.
-
-The `home` endpoint here returns by rendering a template through `jalo_render_template`. This will open the html document and render any lua code inside. However, there are other ways to return from an endpoint like - 
-- `jalo_string_output` - where you just have to return a string.
-- `jalo_file_output` - where you have to return a file.
-
-Some Information:
-- If you do not implement the home endpoint or the `/` endpoint, jalo will create a default one. 
-- You can also make wildcard endpoints by doing:
-
+- Endpoints can also be created in a wild-card manner, to accept generic values. For e.g.
 ```c
+JaloOutput assets(HTTP_Request hr) {
+    return jalo_file_output(hr.path+1);
+}
+// in main -->
     jalo_register(&js, "/assets/*", assets);
 ```
-This will send all of the assets/<anything> request to assets. You can retrieve information about this request through the arguemnt you recieve in the call back `HTTP_Request`. It has a `path` string which contains the actual endpoint requested. For example it maybe have `/assets/stuff.png`. Unlike in other frameworks, you are responsible for creating `static` folder yourself by this method.
+- Notice, in this case the endpoint function returns the same object `JaloOutput` but with a different function - `jalo_file_output`, this will serve any file (just `png` for now, hehe). 
 
-```html 
-<html>
-    <head> <title> Test </title> </head>
-    <body>
-        <h5>The username is :- {username}</h5>
-        <h5>The email is :- {email}</h5>
-        <br> <br>
-        <hr> <hr>
-        <h3> Welcome here </h3>
-    </body>
-</html>
+- While registering we have written '/assets/*', this means every endpoint having atleast assets/ in it will be routed to this callback, like /assets/img.png.
+
+- The file name argument is specified as  `hr.path+1`. This is because `hr.path` contains the endpoint in this case will be `/assets/img.png` but since we wanna load `assets/img.png` we added 1, which will point after the '/' that we don't need.
+
+## Lua Templating 
+- Your HTML file can be a normal HTML file, and also contain some special syntax to allow Jalo to find Lua code inside. For example:
+
+```html
+    <p> The time during the time of fetch was:- {{current_time}} </p>
 ```
-This is the html file rendered by home endpoint. The variables `username` and `email` are directly embedded through lua from earlier script.
+- Everything between {{ and }} will be printed out by first rendering it as a lua variable. If you have already specified a variable called current_time in your lua script (How to script will be shown later), this will be replaced by the variable. If not an error will be thrown.
+
+- {{ }} can't execute full-lua code though, they are just meant for single variables or something that canbeput in an html file like {{user.name}}.
+
+- If you want complex lua code, like loops and statement you can use {% %}
+
+```html
+    {% for _,value in ipairs(user.friends) do %}
+        <p>Hello Friend, {{value}}<p>
+    {% end %}
+
+    <hr>
+
+    {% if user.is_admin then%}
+        <p> Hello, admin </p>
+    {% else %}
+        <p> You are not an admin </p>
+    {% end %}
+```
+- Here we create a for loop, assuming user.friends is created earlier. Writing a {% %} assumes that whatever written below until the next {% %} will be printed inthe html file, here <p>Hello Friend, <name></p> will be printed several time.
+
+- Just like For loop, if statements work the same way and so does almost all of Lua sytanx. This way you can run full lua inside the HTML file. This makes it look like combination of PHP or Flask's Jinja templating, haha.
+
+## Lua Scripting
+- Lua Scripts can also be executed outside of these html files in seperate lua script file. A lua script can be something like: 
+
+```lua
+user = { 
+    name = "Meyan",
+    friends = {"Rama", "Ganesha", "Shiva"},
+    is_admin = false,
+}
+
+current_time = os.date("%H:%M:%S")
+```
+- This is a complete lua script, that contains variables and tables that we mentioned in the html file. This means that we first have to run this script in orderfor Jalo to find them on that HTML file. 
+- Notice there are not `local` variables, I haven't designed it to work with that yet. 
+
+- To execute this lua script from Jalo, you can use 
+```c
+    jalo_execute_file(&js,"./assets/init.lua");
+```
+You can do this anywhere you want, but I have done this before rendering the homepage. 
+```c
+JaloOutput home(HTTP_Request hr) {
+    jalo_execute_file(&js,"./assets/init.lua");
+    return jalo_render_template(&js, "./assets/test.html");
+```
+- Thus our final C code may look like:
+```c
+#include "jalo.h"
+
+JaloServe js;
+
+JaloOutput home(HTTP_Request hr) {
+    jalo_execute_file(&js,"./assets/init.lua");
+    return jalo_render_template(&js, "./assets/test.html");
+}
+
+JaloOutput assets(HTTP_Request hr) {
+    return jalo_file_output(hr.path+1);
+}
+
+int main() {
+    js = jalo_init();
+
+    jalo_register(&js, "/", home);
+    jalo_register(&js, "/assets/*", assets);
+
+    jalo_run(&js, 8080);
+    jalo_deinit(&js);
+}
+```
+
+# Stuff To Do
+- A lot, I won't be working this for more than a month now. So, bye for a month.
+- There are not POST request implemented. 
+- Only 10% is implmented, even less.
+- The implemented features are also buggy, haha.
 
 # Contributing
 Just send a PR, or file an issue. 

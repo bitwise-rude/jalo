@@ -293,7 +293,7 @@ JaloServe jalo_init(void){
     }
 
     // jalo_register(&js,"/assets/*",_static);
-    // jalo_register(&js,"/favicon.ico",_favicon);
+    jalo_register(&js,"/favicon.ico",_favicon);
     // jalo_register(&js,"/",_home);
 
     // Initialize Lua

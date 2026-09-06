@@ -1,14 +1,27 @@
 <html>
     <head> <title> Test </title> </head>
     <body>
-        <h5>The username is :- {{username}}</h5>
-        <h5>The email is :- {{email}}</h5>
-        <h5>The Date is :- {{time}}</h5>
-        {% for i = 1,1000 do %}
-            <h2>Wow</h2>
+        <p> The time during the time of fetch was:- {{current_time}} </p>
+        <p>The username is :- {{user.name}}</p>
+
+        <hr>
+
+        {% for _,value in ipairs(user.friends) do %}
+            <p>Hello Friend, {{value}}<p>
         {% end %}
-        <br> <br>
-        <hr> <hr>
-        <h3> Welcome here </h3>
+
+        <hr>
+
+        {% if user.is_admin then%}
+            <p> Hello, admin </p>
+        {% else %}
+            <p> You are not an admin </p>
+        {% end %}
+
+        <hr>
+
+        <p>This is an image:</p>
+        <img src="/assets/logo_large.png" width=250px height=250px>
+
     </body>
 </html>

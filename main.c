@@ -7,10 +7,15 @@ JaloOutput home(HTTP_Request hr) {
     return jalo_render_template(&js, "./assets/test.html");
 }
 
+JaloOutput assets(HTTP_Request hr) {
+    return jalo_file_output(hr.path+1);
+}
+
 int main() {
     js = jalo_init();
 
     jalo_register(&js, "/", home);
+    jalo_register(&js, "/assets/*", assets);
 
     jalo_run(&js, 8080);
     jalo_deinit(&js);

@@ -1,4 +1,7 @@
+user = { 
+    name = "Meyan",
+    friends = {"Rama", "Ganesha", "Shiva"},
+    is_admin = false,
+}
 
-username = "Meyan"
-email = "dareludum@gmail.com"
-time = os.date("%Y-%m-%d %H:%M:%S")
+current_time = os.date("%H:%M:%S")
