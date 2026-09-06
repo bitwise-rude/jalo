@@ -1,5 +1,6 @@
 /main
 main/
+./blog-site/main
 lua-5.5.1/
 .clangd
 *.o

@@ -108,7 +108,6 @@ JaloOutput jalo_file_output(char *file_name) {
     };
 
 }
-
 JaloOutput jalo_render_template(JaloServe *js, char *file_name) {
     FILE *fp = fopen(file_name, "r");
     if (!fp) {
@@ -125,58 +124,77 @@ JaloOutput jalo_render_template(JaloServe *js, char *file_name) {
     temp[size] = '\0';
     fclose(fp);
 
-    size_t lua_cap = size * 4 + 512;
+    size_t lua_cap = size * 6 + 1024;
     char *lua_script = (char *) malloc(lua_cap);
-    strcpy(lua_script, "local _buf = {}\n");
+    
+    size_t out_idx = 0;
+    out_idx += snprintf(lua_script + out_idx, lua_cap - out_idx, "local _buf = {}\n");
 
     size_t i = 0;
     while (i < size) {
-        // for {% ... %}
         if (temp[i] == '{' && temp[i+1] == '%') {
             i += 2; // skip {%
-            char code_buf[512] = {0};
-            int cb_i = 0;
+            
+            size_t code_start = i;
             while (i < size && !(temp[i] == '%' && temp[i+1] == '}')) {
-                code_buf[cb_i++] = temp[i++];
+                i++;
             }
+            size_t code_len = i - code_start;
             if (i < size) i += 2; // skip %}
 
-            strcat(lua_script, code_buf);
-            strcat(lua_script, "\n");
+            out_idx += snprintf(lua_script + out_idx, lua_cap - out_idx, "%.*s\n", (int)code_len, temp + code_start);
         }
-        // for {{ ... }}
         else if (temp[i] == '{' && temp[i+1] == '{') {
-            i += 2; // {{
-            char expr_buf[512] = {0};
-            int eb_i = 0;
+            i += 2; // skip {{
+            
+            size_t expr_start = i;
             while (i < size && !(temp[i] == '}' && temp[i+1] == '}')) {
-                expr_buf[eb_i++] = temp[i++];
+                i++;
             }
-            if (i < size) i += 2; // }}
+            size_t expr_len = i - expr_start;
+            if (i < size) i += 2; // skip }}
 
-            char insert_stmt[1024];
-            snprintf(insert_stmt, sizeof(insert_stmt), "table.insert(_buf, tostring(%s))\n", expr_buf);
-            strcat(lua_script, insert_stmt);
+            out_idx += snprintf(lua_script + out_idx, lua_cap - out_idx, 
+                                "table.insert(_buf, tostring(%.*s))\n", (int)expr_len, temp + expr_start);
         }
-        // Normal
         else {
-            char text_buf[2048] = {0};
-            int tb_i = 0;
+            size_t text_start = i;
             while (i < size && !(temp[i] == '{' && (temp[i+1] == '{' || temp[i+1] == '%'))) {
-                text_buf[tb_i++] = temp[i++];
+                i++;
             }
-            text_buf[tb_i] = '\0';
+            size_t text_len = i - text_start;
 
-            if (tb_i > 0) {
-                char insert_stmt[4096];
-                snprintf(insert_stmt, sizeof(insert_stmt), "table.insert(_buf, [[%s]])\n", text_buf);
-                strcat(lua_script, insert_stmt);
+            if (text_len > 0) {
+                out_idx += snprintf(lua_script + out_idx, lua_cap - out_idx, "table.insert(_buf, \"");
+                
+                for (size_t k = 0; k < text_len; k++) {
+                    char c = temp[text_start + k];
+                    if (out_idx + 10 >= lua_cap) break; 
+                    
+                    if (c == '"' || c == '\\') {
+                        lua_script[out_idx++] = '\\';
+                        lua_script[out_idx++] = c;
+                    } else if (c == '\n') {
+                        lua_script[out_idx++] = '\\';
+                        lua_script[out_idx++] = 'n';
+                    } else if (c == '\r') {
+                        lua_script[out_idx++] = '\\';
+                        lua_script[out_idx++] = 'r';
+                    } else if (c == '\t') {
+                        lua_script[out_idx++] = '\\';
+                        lua_script[out_idx++] = 't';
+                    } else {
+                        lua_script[out_idx++] = c;
+                    }
+                }
+                lua_script[out_idx] = '\0';
+                
+                out_idx += snprintf(lua_script + out_idx, lua_cap - out_idx, "\")\n");
             }
         }
     }
 
-    strcat(lua_script, "return table.concat(_buf)\n");
-
+    out_idx += snprintf(lua_script + out_idx, lua_cap - out_idx, "return table.concat(_buf)\n");
     free(temp);
 
     if (luaL_dostring(js->L, lua_script) != LUA_OK) {
@@ -204,6 +222,7 @@ JaloOutput jalo_render_template(JaloServe *js, char *file_name) {
         .type = HTML
     };
 }
+
 
 JaloOutput jalo_html_output(char *file_name){
     FILE *fp = fopen(file_name, "r");
