@@ -15,7 +15,7 @@ A Clua (C + Lua) way of making backend for making websites.
 # Walkthrough
 
 ## Basic
-- Include Jalo's Headerfile, `JaloServe` act as the main object/struct which will be referenced in almost all function calls. It's a good idea to make it a global variable, then in your main function initialize it using `jalo_init`
+- Include Jalo's Headerfile, `JaloServe` acts as the main object/struct which will be referenced in almost all function calls. It's a good idea to make it a global variable, then in your main function initialize it using `jalo_init`
     
 `main.c`
 ```c
@@ -66,17 +66,17 @@ JaloOutput assets(HTTP_Request hr) {
 
 - While registering we have written '/assets/*', this means every endpoint having atleast assets/ in it will be routed to this callback, like /assets/img.png.
 
-- The file name argument is specified as  `hr.path+1`. This is because `hr.path` contains the endpoint in this case will be `/assets/img.png` but since we wanna load `assets/img.png` we added 1, which will point after the '/' that we don't need.
+- The file name argument is specified as  `hr.path+1`. This is because `hr.path` contains the endpoint. In this case will be `/assets/img.png` but since we want to load `assets/img.png` we added 1, which will point after the '/' that we don't need. (It is just an advantage of C Strings and a cheap way of making a static file feature)
 
 ## Lua Templating 
-- Your HTML file can be a normal HTML file, and also contain some special syntax to allow Jalo to find Lua code inside. For example:
+- Your HTML file can be a normal HTML file, and/or also contain some special syntax to allow Jalo to find Lua code inside. For example:
 
 ```html
     <p> The time during the time of fetch was:- {{current_time}} </p>
 ```
-- Everything between {{ and }} will be printed out by first rendering it as a lua variable. If you have already specified a variable called current_time in your lua script (How to script will be shown later), this will be replaced by the variable. If not an error will be thrown.
+- Everything between {{ and }} will be printed out/rendered to final HTML by first rendering it as a lua variable. If you have already specified a variable called `current_time` in your lua script (How to script will be shown later), this will be replaced by the variable. If not an error will be thrown.
 
-- {{ }} can't execute full-lua code though, they are just meant for single variables or something that canbeput in an html file like {{user.name}}.
+- {{ }} can't execute full-lua code though, they are just meant for single variables or something that can be put in an html file like {{user.name}}. ( They just work with strings for now, sorry, haha).
 
 - If you want complex lua code, like loops and statement you can use {% %}
 
@@ -93,9 +93,9 @@ JaloOutput assets(HTTP_Request hr) {
         <p> You are not an admin </p>
     {% end %}
 ```
-- Here we create a for loop, assuming user.friends is created earlier. Writing a {% %} assumes that whatever written below until the next {% %} will be printed inthe html file, here <p>Hello Friend, <name></p> will be printed several time.
+- Here we create a for loop, assuming user.friends is created earlier. Writing a {% %} assumes that whatever written below until the next {% %} will be printed in the html file, here <p>Hello Friend, <name></p> will be printed several times.
 
-- Just like For loop, if statements work the same way and so does almost all of Lua sytanx. This way you can run full lua inside the HTML file. This makes it look like combination of PHP or Flask's Jinja templating, haha.
+- Just like For loop, if statements work the same way and so does almost all of Lua sytanx. This way you can run full lua inside the HTML file. This makes it look like combination of PHP or Flask's Jinja templating.
 
 ## Lua Scripting
 - Lua Scripts can also be executed outside of these html files in seperate lua script file. A lua script can be something like: 
@@ -109,8 +109,8 @@ user = {
 
 current_time = os.date("%H:%M:%S")
 ```
-- This is a complete lua script, that contains variables and tables that we mentioned in the html file. This means that we first have to run this script in orderfor Jalo to find them on that HTML file. 
-- Notice there are not `local` variables, I haven't designed it to work with that yet. 
+- This is a complete lua script, that contains variables and tables that we mentioned earlier in the html file. This means that we first have to run this script for Jalo to find them on that HTML file. 
+- Notice these are not `local` variables, I haven't designed it to work with that yet. 
 
 - To execute this lua script from Jalo, you can use 
 ```c
@@ -150,9 +150,7 @@ int main() {
 
 # Stuff To Do
 - A lot, I won't be working this for more than a month now. So, bye for a month.
-- There are not POST request implemented. 
-- Only 10% is implmented, even less.
-- The implemented features are also buggy, haha.
+- The implemented features might be buggy, haha.
 
 # Contributing
 Just send a PR, or file an issue. 
