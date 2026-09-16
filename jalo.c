@@ -258,18 +258,20 @@ JaloOutput jalo_string_output(char *str){
 }
 
 
-JaloOutput _static (HTTP_Request hq) {
-    return jalo_file_output(hq.path+1);
-}
+// skip the following for now 
 
-JaloOutput _favicon (HTTP_Request hq) {
-    strcpy(hq.path,"/assets/logo.png");
-    return _static (hq);
-}
+// JaloOutput _static (HTTP_Request hq) {
+//     return jalo_file_output(hq.path+1);
+// }
 
-JaloOutput _home (HTTP_Request hr) {
-    return jalo_html_output("assets/default.html");
-}
+// JaloOutput _favicon (HTTP_Request hq) {
+//     strcpy(hq.path,"/assets/logo.png");
+//     return _static (hq);
+// }
+//
+// JaloOutput _home (HTTP_Request hr) {
+//     return jalo_html_output("assets/default.html");
+// }
 
 void jalo_execute(JaloServe *js ,char *code){
     luaL_dostring(js->L, code);
@@ -293,7 +295,7 @@ JaloServe jalo_init(void){
     }
 
     // jalo_register(&js,"/assets/*",_static);
-    jalo_register(&js,"/favicon.ico",_favicon);
+    // jalo_register(&js,"/favicon.ico",_favicon);
     // jalo_register(&js,"/",_home);
 
     // Initialize Lua
