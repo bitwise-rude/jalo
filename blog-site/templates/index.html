@@ -1,21 +1,41 @@
 <html>
-    <head> <title> Hey </title> 
+    <head> <title> Meyan Adhikari </title> 
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body{
-    display:flex;
-    flex-direction:column;
-    border: 2px solid brown;
-    width: 50%;
-    margin-left: 25%;
+*{
+    margin = 0;
+    padding= 0;
+}
+@media (width >= 760px)
+{
+    body{
+        border: 5px solid grey;
+        width:100vh;
+        margin-left:50vh;
+        margin-top: 12vh;
+        padding:2%;
+    }
+}
+
+h3{
+    font-family:Courier New;
+    color: darkgreen;
 }
 </style>
     </head>
     <body>
-        <h2> Welcome to my Website </h2>
-        <h3> My name is <i> Meyan Adhikari </i> </h3>
-        <p> I try to explore stuffs in my free time. </p>
-
-        <footer> This is made using jalo, for more information : <a href="https://github.com/bitwise-rude/jalo">Github</a> </footer>
+        <h3> Meyan Adhikari </h3>
+        <p> Here are some projects I have done that might interest you. </p>
+        <ul>
+            {% for _, pr in ipairs(projects) do %}
+                <div class="project">
+                    <li><h4> {{pr.title}} </h4> </li>
+                    <p>{{pr.desc}}</p>
+                    <a href="{{pr.link}}" target="_blank">Link to the Project</a>
+                </div>
+            {% end %}
+        </ul>
+        <hr>
+        <p> For questions and suggestions please contact me at: dareludum@gmail.com </p>
     </body>
 </html>
