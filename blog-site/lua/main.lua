@@ -1,3 +1,10 @@
+blogs = {
+    {
+        title="(Nepali) Why is C unsafe?",
+        link="first.html",
+    },
+}
+
 projects = {
     {
         title= "Jalo - A backend framework written in C.",

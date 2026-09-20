@@ -89,7 +89,7 @@ void jalo_deinit(JaloServe *js){
 JaloOutput jalo_file_output(char *file_name) {
     FILE *fp = fopen(file_name, "rb");
     if (!fp) {
-        printf("Unable To open HTML File %s \n",file_name);
+        printf("Unable To open File %s \n",file_name);
         exit(0);
     }
 

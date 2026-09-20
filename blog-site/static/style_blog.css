@@ -1,0 +1,47 @@
+
+@media (width >= 760px)
+{
+    body{
+        border: 5px solid grey;
+        width:100vh;
+        margin-left:50vh;
+        margin-top: 12vh;
+        padding:2%;
+    }
+}
+
+@font-face {
+  font-family: 'NepaliRegular'; 
+  src: url('./Kalam/Kalam-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NepaliHand'; 
+  src: url('./handwrittenttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+h3{
+    font-family:Courier New;
+    color: darkgreen;
+}
+
+.note{
+    color: darkblue;
+}
+
+ p{
+    font-family: NepaliRegular, sans-serif;
+    font-size:30px;
+}
+
+.back:hover{
+    color:red;
+    text-decoration:underline; 
+    cursor: pointer;
+}

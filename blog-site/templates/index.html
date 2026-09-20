@@ -4,18 +4,33 @@
         <link rel='stylesheet' href="static/style.css">
     </head>
     <body>
-        <h3> Meyan Adhikari </h3>
+<h3> Meyan Adhikari </h3>
         <p class='note'> <a target="_blank" href="https://pmdrf.nchl.com.np/">Contribute</a> to the Prime Minister's Disaster Relief Fund and help the flood victims of Nepal </p>
-        <p> Here are some projects I have done that might interest you. </p>
-        <ul>
-            {% for _, pr in ipairs(projects) do %}
-                <div class="project">
-                    <li><h4> {{pr.title}} </h4> </li>
-                    <p>{{pr.desc}}</p>
-                    <a href="{{pr.link}}" target="_blank">Link to the Project</a>
-                </div>
-            {% end %}
-        </ul>
+        <details>
+            <summary> These are my blogs </summary>
+            <ul>
+                {% for _, pr in ipairs(blogs) do %}
+                    <div class="project">
+                        <li><a href="blogs/{{pr.link}}"><h4>{{pr.title}}</h4></a></li>
+                    </div>
+                {% end %}
+            </ul>
+        </details>
+        <br>
+        <details open>
+            <summary>  Here are some projects I have done that might interest you. </summary>
+            
+            <ul>
+                {% for _, pr in ipairs(projects) do %}
+                    <div class="project">
+                        <li><h4> {{pr.title}} </h4> </li>
+                        <p>{{pr.desc}}</p>
+                        <a href="{{pr.link}}" target="_blank">Link to the Project</a>
+                    </div>
+                {% end %}
+            </ul>
+        </details>
+        
         <hr>
         <p> For questions and suggestions please contact me at: dareludum@gmail.com </p>
     </body>
