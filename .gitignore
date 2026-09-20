@@ -2,6 +2,7 @@
 main/
 lua-5.5.1/
 .clangd
+./blog-site/main
 *.o
 *.so
 
