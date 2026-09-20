@@ -1,6 +1,6 @@
 blogs = {
     {
-        title="(Nepali) Why is C unsafe?",
+        title="(Nepali) Me and Computers",
         link="first.html",
     },
 }

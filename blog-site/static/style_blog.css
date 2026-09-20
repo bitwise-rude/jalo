@@ -43,7 +43,10 @@ h3{
     color: darkblue;
 }
 
- p{
+.blog_body{
+    text-align:justify;
+}
+.blog_body p{
     font-family: NepaliRegular, sans-serif;
     font-size:20px;
 }
