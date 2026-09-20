@@ -10,6 +10,14 @@
     }
 }
 
+@media (width <= 760px)
+{
+    body{
+        border: 5px solid grey;
+        padding:2%;
+    }
+}
+
 @font-face {
   font-family: 'NepaliRegular'; 
   src: url('./Kalam/Kalam-Regular.ttf') format('truetype');
@@ -37,7 +45,7 @@ h3{
 
  p{
     font-family: NepaliRegular, sans-serif;
-    font-size:30px;
+    font-size:20px;
 }
 
 .back:hover{

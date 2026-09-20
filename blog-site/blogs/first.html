@@ -4,12 +4,17 @@
     <title>C किन सुरक्षित छैन?</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel='stylesheet' href="static/style_blog.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/c.min.js"></script>
+    <script>hljs.highlightAll();</script>
+
 </head>
 
 <body>
     <h3 class='back' onclick="window.location.href='/'"><--</h3>
     <h3> C किन सुरक्षित छैन? </h3>
-
+    
     <div class="blog_body">
         <p>
             C वास्तवमा निकै नै उत्कृष्ट प्रोग्रामिङ्ग भाषाहरु भध्ये एक हो। हामीले प्रयोग गर्ने अन्य धेरै भाषाहरु जस्तै
@@ -40,6 +45,13 @@
             compiler बाट कुनै पनि "यस्तो नगर" भनेको सुन्नुहुन्न। अहिलेका आधुनिक compilerले चाहिँ बरु नगरेको भए हुन्थयो
             भन्न सक्छन । बस यत्ति । हाहा ।
         </p>
+        <pre><code class="language-c">
+        int sample[5]; // Just allocated array for five elements
+
+        sample[8] = 88; // valid C code, no errors, maybe warnings or sometimes errors
+
+        sample[8] // trying to acces, this behaviour is undefined.
+        </code></pre>
     </div>
 
     <hr>
