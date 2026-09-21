@@ -1,6 +1,5 @@
 blogs = {
-    {
-        title="(Nepali) Me and Computers",
+        title="First",
         link="first.html",
     },
 }
